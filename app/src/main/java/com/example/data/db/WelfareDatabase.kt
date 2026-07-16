@@ -14,9 +14,10 @@ import com.example.data.model.*
         Announcement::class,
         WelfareRequest::class,
         Reminder::class,
-        AuditLog::class
+        AuditLog::class,
+        GroupDepositAccount::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class WelfareDatabase : RoomDatabase() {

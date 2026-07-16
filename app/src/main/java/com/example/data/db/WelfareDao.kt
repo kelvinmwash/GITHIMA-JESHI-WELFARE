@@ -87,4 +87,17 @@ interface WelfareDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAuditLog(log: AuditLog): Long
+
+    // --- GROUP DEPOSIT ACCOUNTS ---
+    @Query("SELECT * FROM group_deposit_accounts ORDER BY id ASC")
+    fun getAllGroupDepositAccounts(): Flow<List<GroupDepositAccount>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertGroupDepositAccount(account: GroupDepositAccount): Long
+
+    @Update
+    suspend fun updateGroupDepositAccount(account: GroupDepositAccount)
+
+    @Delete
+    suspend fun deleteGroupDepositAccount(account: GroupDepositAccount)
 }

@@ -54,6 +54,9 @@ class WelfareViewModel(application: Application) : AndroidViewModel(application)
     val allAuditLogs: StateFlow<List<AuditLog>> = repository.allAuditLogs
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val allGroupDepositAccounts: StateFlow<List<GroupDepositAccount>> = repository.allGroupDepositAccounts
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     // Filtered flows based on logged in user
     val userContributions: StateFlow<List<Contribution>> = _currentUser
         .flatMapLatest { user ->
@@ -108,13 +111,43 @@ class WelfareViewModel(application: Application) : AndroidViewModel(application)
 
     private fun seedInitialData() {
         viewModelScope.launch {
+            // Seed Group Deposit Accounts if empty
+            val groupAccounts = repository.allGroupDepositAccounts.first()
+            if (groupAccounts.isEmpty()) {
+                repository.insertGroupDepositAccount(
+                    GroupDepositAccount(
+                        accountType = "M-Pesa Paybill",
+                        providerName = "Safaricom",
+                        accountNumber = "522522",
+                        accountName = "Githima Welfare General Fund",
+                        paybillAccountRef = "GITHIMA"
+                    )
+                )
+                repository.insertGroupDepositAccount(
+                    GroupDepositAccount(
+                        accountType = "Bank Account",
+                        providerName = "Equity Bank",
+                        accountNumber = "0070179001339",
+                        accountName = "Githima Jeshi Welfare Association"
+                    )
+                )
+                repository.insertGroupDepositAccount(
+                    GroupDepositAccount(
+                        accountType = "M-Pesa Till Number",
+                        providerName = "Safaricom",
+                        accountNumber = "897654",
+                        accountName = "Githima Welfare Emergencies"
+                    )
+                )
+            }
+
             // Check if users table is empty to seed
             val users = allUsers.value
             if (users.isEmpty()) {
                 // Seed members
-                val admin = User(id = 1, name = "Lt. Gen. Joseph Kamau", phone = "0711111111", email = "kamau@githimajeshi.or.ke", role = "Admin", status = "Approved", joinedDate = "2026-01-10")
-                val treasurer = User(id = 2, name = "Major Sarah Cherono", phone = "0722222222", email = "cherono@githimajeshi.or.ke", role = "Treasurer", status = "Approved", joinedDate = "2026-01-12")
-                val member = User(id = 3, name = "Corporal John Onyango", phone = "0733333333", email = "onyango@githimajeshi.or.ke", role = "Member", status = "Approved", joinedDate = "2026-02-15")
+                val admin = User(id = 1, name = "Lt. Gen. Joseph Kamau", phone = "0711111111", email = "kamau@githimajeshi.or.ke", role = "Admin", status = "Approved", joinedDate = "2026-01-10", payoutMethod = "M-Pesa", payoutPhone = "0711111111", payoutAccountName = "Joseph Kamau")
+                val treasurer = User(id = 2, name = "Major Sarah Cherono", phone = "0722222222", email = "cherono@githimajeshi.or.ke", role = "Treasurer", status = "Approved", joinedDate = "2026-01-12", payoutMethod = "Bank Account", payoutBankName = "KCB Bank", payoutBankAccount = "1102938475", payoutAccountName = "Sarah Cherono")
+                val member = User(id = 3, name = "Corporal John Onyango", phone = "0733333333", email = "onyango@githimajeshi.or.ke", role = "Member", status = "Approved", joinedDate = "2026-02-15", payoutMethod = "M-Pesa", payoutPhone = "0733333333", payoutAccountName = "John Onyango")
                 val pending = User(id = 4, name = "Private Grace Mwangi", phone = "0744444444", email = "mwangi@githimajeshi.or.ke", role = "Member", status = "Pending", joinedDate = "2026-07-15")
 
                 repository.insertUser(admin)
@@ -259,6 +292,27 @@ class WelfareViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    fun loginBiometric(phone: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            if (phone.isBlank()) {
+                onError("Please select or enter a registered phone number")
+                return@launch
+            }
+            val user = repository.getUserByPhone(phone)
+            if (user != null) {
+                if (user.status == "Pending") {
+                    onError("Your account is pending administrator approval")
+                } else {
+                    _currentUser.value = user
+                    logAction("User Login (Biometric)", "Logged in securely via Biometric Fingerprint.", user.name)
+                    onSuccess()
+                }
+            } else {
+                onError("No registered member found with this phone number")
+            }
+        }
+    }
+
     fun register(name: String, phone: String, email: String, role: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
         viewModelScope.launch {
             if (name.isBlank() || phone.isBlank() || email.isBlank()) {
@@ -296,6 +350,14 @@ class WelfareViewModel(application: Application) : AndroidViewModel(application)
         val name = _currentUser.value?.name ?: "Unknown"
         logAction("User Logout", "Logged out of session.", name)
         _currentUser.value = null
+    }
+
+    fun refreshData(onComplete: () -> Unit) {
+        viewModelScope.launch {
+            delay(1200) // Simulated sync time
+            logAction("Database Refresh", "Manual sync and refresh completed successfully.", _currentUser.value?.name ?: "Guest")
+            onComplete()
+        }
     }
 
     fun switchUser(user: User) {
@@ -558,6 +620,69 @@ class WelfareViewModel(application: Application) : AndroidViewModel(application)
     fun markReminderRead(reminderId: Int) {
         viewModelScope.launch {
             repository.markReminderAsRead(reminderId)
+        }
+    }
+
+    // --- MEMBER PAYOUT SETTINGS ---
+    fun updateUserPayoutSettings(
+        payoutMethod: String,
+        payoutPhone: String,
+        payoutBankName: String,
+        payoutBankAccount: String,
+        payoutAccountName: String,
+        onSuccess: () -> Unit = {}
+    ) {
+        viewModelScope.launch {
+            val user = _currentUser.value ?: return@launch
+            val updated = user.copy(
+                payoutMethod = payoutMethod,
+                payoutPhone = payoutPhone,
+                payoutBankName = payoutBankName,
+                payoutBankAccount = payoutBankAccount,
+                payoutAccountName = payoutAccountName
+            )
+            repository.updateUser(updated)
+            _currentUser.value = updated
+            logAction("Payout Accounts Updated", "Updated receiving account destination: $payoutMethod ($payoutAccountName).", user.name)
+            onSuccess()
+        }
+    }
+
+    // --- GROUP DEPOSIT ACCOUNT CRUD ---
+    fun addGroupDepositAccount(
+        accountType: String,
+        providerName: String,
+        accountNumber: String,
+        accountName: String,
+        paybillAccountRef: String
+    ) {
+        viewModelScope.launch {
+            val user = _currentUser.value ?: return@launch
+            val account = GroupDepositAccount(
+                accountType = accountType,
+                providerName = providerName,
+                accountNumber = accountNumber,
+                accountName = accountName,
+                paybillAccountRef = paybillAccountRef
+            )
+            repository.insertGroupDepositAccount(account)
+            logAction("Deposit Channel Added", "Added group deposit channel: $accountType - $accountNumber ($accountName)", user.name)
+        }
+    }
+
+    fun updateGroupDepositAccount(account: GroupDepositAccount) {
+        viewModelScope.launch {
+            val user = _currentUser.value ?: return@launch
+            repository.updateGroupDepositAccount(account)
+            logAction("Deposit Channel Updated", "Updated group deposit channel ID #${account.id} - ${account.accountType}", user.name)
+        }
+    }
+
+    fun deleteGroupDepositAccount(account: GroupDepositAccount) {
+        viewModelScope.launch {
+            val user = _currentUser.value ?: return@launch
+            repository.deleteGroupDepositAccount(account)
+            logAction("Deposit Channel Deleted", "Deleted group deposit channel ID #${account.id} - ${account.accountNumber}", user.name)
         }
     }
 

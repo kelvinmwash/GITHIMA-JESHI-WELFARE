@@ -11,7 +11,12 @@ data class User(
     val email: String,
     val role: String, // "Member", "Admin", "Treasurer"
     val status: String, // "Pending", "Approved"
-    val joinedDate: String
+    val joinedDate: String,
+    val payoutMethod: String = "M-Pesa", // "M-Pesa" or "Bank Account"
+    val payoutPhone: String = "",
+    val payoutBankName: String = "",
+    val payoutBankAccount: String = "",
+    val payoutAccountName: String = ""
 )
 
 @Entity(tableName = "contributions")
@@ -78,4 +83,14 @@ data class AuditLog(
     val details: String,
     val timestamp: String,
     val actorName: String
+)
+
+@Entity(tableName = "group_deposit_accounts")
+data class GroupDepositAccount(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val accountType: String, // "M-Pesa Paybill", "M-Pesa Till Number", "Bank Account"
+    val providerName: String, // e.g. "Safaricom", "Equity Bank", "KCB Bank", etc.
+    val accountNumber: String, // e.g. "522522" or bank account number
+    val accountName: String, // e.g. "Githima Welfare Fund"
+    val paybillAccountRef: String = "" // e.g. "GITHIMA-MEMBER"
 )

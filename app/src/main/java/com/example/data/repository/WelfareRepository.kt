@@ -76,4 +76,16 @@ class WelfareRepository(private val welfareDao: WelfareDao) {
 
     suspend fun insertAuditLog(log: AuditLog): Long =
         welfareDao.insertAuditLog(log)
+
+    // --- GROUP DEPOSIT ACCOUNTS ---
+    val allGroupDepositAccounts: Flow<List<GroupDepositAccount>> = welfareDao.getAllGroupDepositAccounts()
+
+    suspend fun insertGroupDepositAccount(account: GroupDepositAccount): Long =
+        welfareDao.insertGroupDepositAccount(account)
+
+    suspend fun updateGroupDepositAccount(account: GroupDepositAccount) =
+        welfareDao.updateGroupDepositAccount(account)
+
+    suspend fun deleteGroupDepositAccount(account: GroupDepositAccount) =
+        welfareDao.deleteGroupDepositAccount(account)
 }
