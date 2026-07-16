@@ -1,0 +1,6 @@
+{
+  "name": "Githima Jeshi Welfare",
+  "description": "Githima Jeshi Welfare is a digital welfare and merry-go-round management application designed to help members contribute, save, and receive payouts in a transparent and secure way.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
