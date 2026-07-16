@@ -179,7 +179,7 @@ class WelfareViewModel(application: Application) : AndroidViewModel(application)
                 repository.insertContribution(
                     Contribution(
                         userId = 3,
-                        userName = "Corporal John Onyango",
+                        userName = "kelvin mwangi",
                         amount = 2000.0,
                         phoneNumber = "0733333333",
                         mpesaReceipt = "RLF5HG78KJ",
@@ -191,7 +191,7 @@ class WelfareViewModel(application: Application) : AndroidViewModel(application)
                 repository.insertContribution(
                     Contribution(
                         userId = 3,
-                        userName = "Corporal John Onyango",
+                        userName = "kelvin mwangi",
                         amount = 5000.0,
                         phoneNumber = "0733333333",
                         mpesaReceipt = "RLM8YF49RE",
@@ -217,7 +217,7 @@ class WelfareViewModel(application: Application) : AndroidViewModel(application)
                 repository.insertPayout(
                     Payout(
                         userId = 3,
-                        userName = "Corporal John Onyango",
+                        userName = "kelvin mwangi",
                         amount = 35000.0,
                         date = "2026-06-30",
                         status = "Disbursed",
@@ -229,7 +229,7 @@ class WelfareViewModel(application: Application) : AndroidViewModel(application)
                 repository.insertWelfareRequest(
                     WelfareRequest(
                         userId = 3,
-                        userName = "Corporal John Onyango",
+                        userName = "kelvin mwangi",
                         title = "Family Medical Assistance",
                         description = "Assistance for medical bills following a sudden hospitalization of my spouse. Hospital bill attached.",
                         amountRequested = 15000.0,
@@ -259,9 +259,7 @@ class WelfareViewModel(application: Application) : AndroidViewModel(application)
                     )
                 )
 
-                // Set default logged in user as John Onyango (Member) to start
-                val john = repository.getUserByPhone("0733333333")
-                _currentUser.value = john
+                // Do not set any default logged in user to ensure login screen is shown first
             }
         }
     }
